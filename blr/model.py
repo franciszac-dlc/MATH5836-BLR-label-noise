@@ -5,8 +5,6 @@ model, training it, and performing inference.
 
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 import arviz as az
 
 from sklearn.linear_model import LogisticRegression
@@ -18,7 +16,6 @@ from sklearn.compose import ColumnTransformer
 from sklearn.metrics import roc_curve, auc, precision_recall_curve, precision_score, recall_score
 
 import pymc3 as pm
-from theano import shared
 
 
 class Model:
@@ -36,11 +33,11 @@ class LRModel(Model):
     """
     Logistic Regression
     """
-    def __init__(self):
+    def __init__(self, features):
         self.model = LogisticRegression()
+        self.features = features
 
     def fit(self, X, y):
-        self.features = x.columns.values
         self.model.fit(X, y)
         return None
 
@@ -61,9 +58,9 @@ class BLRModel(Model):
     """
     Bayesian Logistic Regression
     """
-    def __init__(self, X, y, random_seed=100):
+    def __init__(self, X, y, features, random_seed=100):
         self.random_seed = random_seed
-        self.features = x.columns.values
+        self.features = features
 
         # data has to be provided prior to training
         with pm.Model() as log_model:
