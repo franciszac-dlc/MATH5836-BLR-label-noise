@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.compose import ColumnTransformer
 
 
@@ -22,17 +22,20 @@ class Dataset:
 
     def generate_split(self, noise_amt=0.0):
         # generate base splits
-        scaler = ColumnTransformer([('minmax-scaler', 
-                                    MinMaxScaler(),
-                                    ['capital_run_length_average', 'capital_run_length_longest', 'capital_run_length_total']
-                                    )], remainder='passthrough')
+        # scaler = ColumnTransformer([('minmax-scaler', 
+        #                             MinMaxScaler(),
+        #                             ['capital_run_length_average', 'capital_run_length_longest', 'capital_run_length_total']
+        #                             )], remainder='passthrough')
+        scaler = StandardScaler()
 
         X_train_raw, X_test_raw, y_train, y_test = train_test_split(
             self.X,
             self.y,
             random_state=self.random_seed)
-        X_train = scaler.fit_transform(X_train_raw)
-        X_test = scaler.transform(X_test_raw)
+
+        # Gelman recommends a std. dev. of 0.5
+        X_train = scaler.fit_transform(X_train_raw) * 0.5
+        X_test = scaler.transform(X_test_raw) * 0.5
         
         # noise as necessary
         if self.noise_type is None:

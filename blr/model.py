@@ -58,7 +58,7 @@ class BLRModel(Model):
     """
     Bayesian Logistic Regression
     """
-    def __init__(self, X, y, features, random_seed=100):
+    def __init__(self, X, y, features, prior='normal', random_seed=100):
         self.random_seed = random_seed
         self.features = features
 
@@ -68,16 +68,41 @@ class BLRModel(Model):
             lr_output = pm.Data("lr_output", y)
 
             # Weights from input to output
-            lr_weights = pm.Normal(
-                "lr_weights",
-                0,
-                sigma=1,
-                shape=(X.shape[1],),
-                testval=np.random.randn(X.shape[1]).astype(float)
-            )
+            if prior == 'normal':
+                lr_weights = pm.Normal(
+                    "lr_weights",
+                    0,
+                    sigma=1,
+                    shape=(X.shape[1],),
+                    testval=np.random.randn(X.shape[1]).astype(float)
+                )
+
+                lr_bias = pm.Normal(
+                    "lr_bias",
+                    0,
+                    sigma=1,
+                    shape=(1,),
+                    testval=np.random.randn(1).astype(float)
+                )
+            elif prior == 'cauchy':
+                lr_weights = pm.Cauchy(
+                    "lr_weights",
+                    alpha=0,
+                    beta=2.5,
+                    shape=(X.shape[1],),
+                    testval=np.random.randn(X.shape[1]).astype(float)
+                )
+
+                lr_bias = pm.Cauchy(
+                    "lr_bias",
+                    alpha=0,
+                    beta=10,
+                    shape=(1,),
+                    testval=np.random.randn(1).astype(float)
+                )
 
             # Build logistic model using sigmoid activation function
-            act_out = pm.math.sigmoid(pm.math.dot(lr_input, lr_weights))
+            act_out = pm.math.sigmoid(pm.math.dot(lr_input, lr_weights) + lr_bias)
 
             # Binary classification -> Bernoulli likelihood
             out = pm.Bernoulli(

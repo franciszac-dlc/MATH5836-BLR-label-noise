@@ -12,6 +12,44 @@ from scipy.stats import kstest, anderson
 from sklearn.metrics import roc_curve, auc, precision_recall_curve, precision_score, recall_score
 
 
+def generate_diff_plot(features, noise_amts, meandiffs, title, ax=None):
+    dff = {}
+    for f in features:
+        dff[f] = [x.loc[f, 'diff'] for x in meandiffs]
+    df = pd.DataFrame.from_dict(dff)
+    df.index = noise_amts
+    
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(6, 4))
+    else:
+        fig = ax.get_figure()
+
+    sns.lineplot(df, markers=True, ax=ax)
+    ax.set_title(title)
+    ax.set_xlabel('noise ratio')
+    ax.set_ylabel('percent difference (%)')
+    return fig, ax
+
+
+def generate_coef_plot(features, noise_amts, coefs, title, ax=None):
+    dff = {}
+    for f in features:
+        dff[f] = [x[x.feature == f].coef.values[0] for x in coefs]
+    df = pd.DataFrame.from_dict(dff)
+    df.index = noise_amts
+    
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(6, 4))
+    else:
+        fig = ax.get_figure()
+
+    sns.lineplot(df, markers=True, ax=ax)
+    ax.set_title(title)
+    ax.set_xlabel('noise ratio')
+    ax.set_ylabel('coefficient')
+    return fig, ax
+
+
 def generate_tracesum_plot(features, noise_amts, tracesums, title, v='sd', ax=None):
     dff = {}
     for f in features:
@@ -31,7 +69,7 @@ def generate_tracesum_plot(features, noise_amts, tracesums, title, v='sd', ax=No
     return fig, ax
 
 
-def generate_kstest_plot(features, noise_amts, traces, title):
+def generate_kstest_plot(features, noise_amts, traces, title, ax=None):
     dff = {}
     for f in features:
         dff[f] = [kstest(x[f], 'norm').pvalue for x in traces]
@@ -50,10 +88,15 @@ def generate_kstest_plot(features, noise_amts, traces, title):
     return fig, ax
 
 
-def generate_anderson_plot(features, noise_amts, traces, title):
+def generate_anderson_plot(features, noise_amts, traces, title, ax=None):
+    def _compute_diff(adtest):
+        _st = adtest.statistic
+        _cv = adtest.critical_values[2]
+        return (_st - _cv)
+
     dff = {}
     for f in features:
-        dff[f] = [anderson(x[f], 'norm').statistic for x in traces]
+        dff[f] = [_compute_diff(anderson(x[f], 'norm')) for x in traces]
     df = pd.DataFrame.from_dict(dff)
     df.index = noise_amts
 
@@ -65,7 +108,7 @@ def generate_anderson_plot(features, noise_amts, traces, title):
     sns.lineplot(df, markers=True, ax=ax)
     ax.set_title(title)
     ax.set_xlabel('noise ratio')
-    ax.set_ylabel('Anderson test statistic')
+    ax.set_ylabel('test statistic - 5\% C.V.')
     return fig, ax
 
 
